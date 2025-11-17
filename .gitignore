@@ -1,0 +1,23 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+*.tgz
+
+# Test files
+app-icon.svg
+public/
+*.png
+*.ico
+*.svg
+*.webmanifest
+html-snippet.txt
+
+# Keep example in repo
+!example.svg
+SUMMARY.md
+PUBLISHING.md
+CHECKLIST.md
+web-icons-generator.mcpb
+MCP-TOOLS.md

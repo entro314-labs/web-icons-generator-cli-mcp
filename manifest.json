@@ -1,0 +1,64 @@
+{
+  "manifest_version": "0.3",
+  "name": "web-icons-generator",
+  "display_name": "Web Icons Generator",
+  "version": "1.0.0",
+  "description": "Generate all required web app icons from a single source image",
+  "long_description": "Automatically generate all essential web app icons (favicon, PWA icons, Apple touch icon, maskable icon, Safari pinned tab, and manifest) from a single source image. Supports SVG and PNG inputs, auto-detects frameworks (Next.js, Astro, SvelteKit, Remix, Vite), and generates icons in the correct directory with zero configuration.",
+  "author": {
+    "name": "Dominikos Pritis",
+    "url": "https://github.com/entro314-labs/create-web-icons"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/entro314-labs/create-web-icons"
+  },
+  "homepage": "https://github.com/entro314-labs/create-web-icons",
+  "documentation": "https://github.com/entro314-labs/create-web-icons#readme",
+  "icon": "icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/mcp.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/mcp.js"]
+    }
+  },
+  "tools": [
+    {
+      "name": "generate_web_icons",
+      "description": "Generate all required web app icons from a source image (SVG, PNG, or JPG)"
+    },
+    {
+      "name": "auto_generate_icons",
+      "description": "Automatically find app-icon.svg or app-icon.png and generate all web icons"
+    },
+    {
+      "name": "check_icons_status",
+      "description": "Check which web icons exist and which are missing in a project"
+    },
+    {
+      "name": "integrate_icons_html",
+      "description": "Add or update icon link tags in HTML files automatically"
+    }
+  ],
+  "tools_generated": false,
+  "keywords": [
+    "icons",
+    "favicon",
+    "pwa",
+    "web-app",
+    "apple-touch-icon",
+    "manifest",
+    "maskable"
+  ],
+  "license": "MIT",
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  },
+  "user_config": {}
+}

@@ -1,0 +1,34 @@
+# Source files
+src/
+tsconfig.json
+
+# Development files
+*.log
+.DS_Store
+.env
+pnpm-lock.yaml
+pnpm-workspace.yaml
+.gitignore
+.git/
+
+# Test files
+example.svg
+app-icon.svg
+public/
+test/
+
+# MCPB extension files (not for npm)
+manifest.json
+icon.svg
+icon.png
+*.mcpb
+
+# Documentation (keep README.md and LICENSE)
+*.md
+!README.md
+!MCP.md
+SUMMARY.md
+PUBLISHING.md
+CHECKLIST.md
+web-icons-generator.mcpb
+MCP-TOOLS.md

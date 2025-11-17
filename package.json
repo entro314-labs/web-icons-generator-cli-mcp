@@ -1,0 +1,71 @@
+{
+  "name": "create-web-icons",
+  "version": "1.0.0",
+  "description": "Generate all required web app icons and files from a single source image - supports most common frameworks, works as cli and MCP server",
+  "main": "dist/index.js",
+  "bin": {
+    "create-web-icons": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
+    "pack:mcpb": "mcpb pack"
+  },
+  "keywords": [
+    "favicon",
+    "icons",
+    "pwa",
+    "web-app",
+    "apple-touch-icon",
+    "manifest",
+    "web-manifest",
+    "icon-generator",
+    "favicon-generator",
+    "pwa-icons",
+    "maskable-icons",
+    "safari-pinned-tab",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "claude",
+    "ai"
+  ],
+  "author": "Dominik Ospritis",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/entro314-labs/create-web-icons.git"
+  },
+  "bugs": {
+    "url": "https://github.com/entro314-labs/create-web-icons/issues"
+  },
+  "homepage": "https://github.com/entro314-labs/create-web-icons#readme",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.22.0",
+    "ajv": "^8.17.1",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.2",
+    "ora": "^9.0.0",
+    "prompts": "^2.4.2",
+    "sharp": "^0.34.5",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@anthropic-ai/mcpb": "^2.0.1",
+    "@types/node": "^24.10.1",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.9.3"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
