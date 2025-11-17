@@ -2,19 +2,19 @@
   "manifest_version": "0.3",
   "name": "web-icons-generator-cli-mcp",
   "display_name": "Web Icons Generator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generate all required web app icons from a single source image",
   "long_description": "Automatically generate all essential web app icons (favicon, PWA icons, Apple touch icon, maskable icon, Safari pinned tab, and manifest) from a single source image. Supports SVG and PNG inputs, auto-detects frameworks (Next.js, Astro, SvelteKit, Remix, Vite), and generates icons in the correct directory with zero configuration.",
   "author": {
     "name": "Dominikos Pritis",
-    "url": "https://github.com/entro314-labs/create-web-icons"
+    "url": "https://github.com/entro314-labs/web-icons-generator-cli-mcp"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/entro314-labs/create-web-icons"
+    "url": "https://github.com/entro314-labs/web-icons-generator-cli-mcp"
   },
-  "homepage": "https://github.com/entro314-labs/create-web-icons",
-  "documentation": "https://github.com/entro314-labs/create-web-icons#readme",
+  "homepage": "https://github.com/entro314-labs/web-icons-generator-cli-mcp",
+  "documentation": "https://github.com/entro314-labs/web-icons-generator-cli-mcp#readme",
   "icon": "icon.png",
   "server": {
     "type": "node",

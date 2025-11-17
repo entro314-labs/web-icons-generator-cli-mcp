@@ -1,10 +1,12 @@
 {
-  "name": "@entro314labs/web-icons-cli-mpc",
+  "name": "@entro314labs/web-icons-generator-cli-mcp",
   "version": "1.0.0",
   "description": "Generate all required web app icons and files from a single source image - supports most common frameworks, works as cli and MCP server",
   "main": "dist/index.js",
   "bin": {
-    "create-web-icons-cli-mpc": "dist/cli.js"
+    "web-icons-generator-cli-mcp": "dist/cli.js",
+    "create-icons": "dist/cli.js",
+    "webicons": "dist/cli.js"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -37,12 +39,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/entro314-labs/create-web-icons-cli-mpc.git"
+    "url": "git+https://github.com/entro314-labs/web-icons-generator-cli-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/entro314-labs/create-web-icons-cli-mpc/issues"
+    "url": "https://github.com/entro314-labs/web-icons-generator-cli-mcp/issues"
   },
-  "homepage": "https://github.com/entro314-labs/create-web-icons-cli-mpc#readme",
+  "homepage": "https://github.com/entro314-labs/web-icons-generator-cli-mcp#readme",
   "files": [
     "dist",
     "README.md",

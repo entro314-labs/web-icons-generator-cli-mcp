@@ -1,4 +1,4 @@
-# create-web-icons 🎨
+# @entro314labs/web-icons-generator-cli-mcp 🎨
 
 Generate all required web app icons and files from a single source image. Modern, fast, and framework-aware.
 
@@ -23,10 +23,16 @@ Generate all required web app icons and files from a single source image. Modern
 
 ```bash
 # Run directly with npx (no installation needed)
-npx create-web-icons source.svg
+npx @entro314labs/web-icons-generator-cli-mcp source.svg
+
+# Shorter aliases
+npx @entro314labs/web-icons-generator-cli-mcp@latest
+# After install: create-icons, webicons, or web-icons-generator-cli-mcp
 
 # Or install globally
-npm install -g create-web-icons
+npm install -g @entro314labs/web-icons-generator-cli-mcp
+create-icons  # shortest command!
+webicons     # also works
 ```
 
 ## Usage
@@ -36,7 +42,7 @@ npm install -g create-web-icons
 ```bash
 # Place app-icon.svg or app-icon.png in your project root
 cd my-project
-npx create-web-icons
+npx @entro314labs/web-icons-generator-cli-mcp
 # ✓ Found app-icon.svg in current directory
 # ✓ Detected Next.js → using public/ directory
 # ✨ Success! Generated 8 files
@@ -46,23 +52,27 @@ npx create-web-icons
 
 ```bash
 # With source file as argument
-npx create-web-icons logo.svg
+npx @entro314labs/web-icons-generator-cli-mcp logo.svg
+
+# Or if installed globally (use shorter commands)
+create-icons logo.svg
+webicons logo.svg
 
 # Interactive mode (prompts for source if not found)
-npx create-web-icons
+create-icons
 ```
 
 ### Advanced Options
 
 ```bash
 # Specify output directory
-npx create-web-icons logo.svg --output ./public
+create-icons logo.svg --output ./public
 
 # Custom Safari pinned tab color
-npx create-web-icons logo.svg --color "#ff5733"
+create-icons logo.svg --color "#ff5733"
 
 # Full example
-npx create-web-icons logo.svg -o ./static -c "#1a1a1a"
+create-icons logo.svg -o ./static -c "#1a1a1a"
 ```
 
 ## Generated Files
@@ -157,7 +167,7 @@ This tool:
 ```bash
 cd my-nextjs-app
 # Create app-icon.svg in the project root
-npx create-web-icons
+create-icons
 # ✓ Found app-icon.svg in current directory
 # ✓ Detected Next.js → using public/ directory
 # ✨ Success! Generated 8 files
@@ -167,7 +177,7 @@ npx create-web-icons
 
 ```bash
 cd my-nextjs-app
-npx create-web-icons assets/logo.svg
+create-icons assets/logo.svg
 # ✓ Detected Next.js → using public/ directory
 # ✨ Success! Generated 8 files
 ```
@@ -175,14 +185,14 @@ npx create-web-icons assets/logo.svg
 ### Example 3: Custom Output
 
 ```bash
-npx create-web-icons assets/brand.svg --output static/icons
+create-icons assets/brand.svg --output static/icons
 # Generated icons in static/icons/
 ```
 
 ### Example 4: Brand Color
 
 ```bash
-npx create-web-icons logo.svg --color "#ff6b35"
+create-icons logo.svg --color "#ff6b35"
 # Safari pinned tab will use #ff6b35
 ```
 
@@ -225,7 +235,7 @@ Add to your Claude Desktop config:
   "mcpServers": {
     "web-icons": {
       "command": "npx",
-      "args": ["-y", "create-web-icons", "--mcp"]
+      "args": ["-y", "@entro314labs/web-icons-generator-cli-mcp", "--mcp"]
     }
   }
 }
@@ -254,8 +264,8 @@ See **[MCP.md](./MCP.md)** for complete documentation.
 
 ```bash
 # Clone repository
-git clone https://github.com/entro314-labs/create-web-icons.git
-cd create-web-icons
+git clone https://github.com/entro314-labs/web-icons-generator-cli-mcp.git
+cd web-icons-generator-cli-mcp
 
 # Install dependencies
 npm install
@@ -265,10 +275,10 @@ npm run build
 
 # Test CLI
 npm link
-create-web-icons test.svg
+web-icons-generator-cli-mcp test.svg
 
 # Test MCP server
-create-web-icons --mcp
+web-icons-generator-cli-mcp --mcp
 ```
 ```
 

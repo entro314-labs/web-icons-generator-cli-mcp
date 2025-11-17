@@ -6,11 +6,13 @@ This package includes **three ways** to use the web icons generator:
 
 ```bash
 # Use directly with npx
-npx create-web-icons
+npx @entro314labs/web-icons-cli-mpc
 
 # Or install globally
-npm install -g create-web-icons
-create-web-icons
+npm install -g @entro314labs/web-icons-cli-mpc
+create-icons  # shortest!
+webicons      # also works
+web-icons-cli-mpc  # full name
 ```
 
 ## 2. 🤖 MCP Server (Model Context Protocol)
@@ -26,7 +28,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   "mcpServers": {
     "web-icons": {
       "command": "npx",
-      "args": ["-y", "create-web-icons", "--mcp"]
+      "args": ["-y", "@entro314labs/web-icons-cli-mpc", "--mcp"]
     }
   }
 }
@@ -38,7 +40,7 @@ Or if installed globally:
 {
   "mcpServers": {
     "web-icons": {
-      "command": "create-web-icons",
+      "command": "create-icons",
       "args": ["--mcp"]
     }
   }
