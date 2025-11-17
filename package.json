@@ -7,8 +7,8 @@
     "create-web-icons-cli-mpc": "dist/cli.js"
   },
   "scripts": {
-    "typecheck": "tsc",
-    "build": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/cli.js",
     "prepare": "npm run build",
