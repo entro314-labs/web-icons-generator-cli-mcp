@@ -1,6 +1,6 @@
 {
   "manifest_version": "0.3",
-  "name": "web-icons-generator",
+  "name": "web-icons-generator-cli-mcp",
   "display_name": "Web Icons Generator",
   "version": "1.0.0",
   "description": "Generate all required web app icons from a single source image",

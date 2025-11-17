@@ -1,17 +1,16 @@
 {
-  "name": "create-web-icons",
+  "name": "create-web-icons-cli-mpc",
   "version": "1.0.0",
   "description": "Generate all required web app icons and files from a single source image - supports most common frameworks, works as cli and MCP server",
   "main": "dist/index.js",
   "bin": {
-    "create-web-icons": "dist/cli.js"
+    "create-web-icons-cli-mpc": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "typecheck": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/cli.js",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run build",
     "pack:mcpb": "mcpb pack"
   },
   "keywords": [
@@ -33,16 +32,16 @@
     "claude",
     "ai"
   ],
-  "author": "Dominik Ospritis",
+  "author": "Dominikos Pritis",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/entro314-labs/create-web-icons.git"
+    "url": "git+https://github.com/entro314-labs/create-web-icons-cli-mpc.git"
   },
   "bugs": {
-    "url": "https://github.com/entro314-labs/create-web-icons/issues"
+    "url": "https://github.com/entro314-labs/create-web-icons-cli-mpc/issues"
   },
-  "homepage": "https://github.com/entro314-labs/create-web-icons#readme",
+  "homepage": "https://github.com/entro314-labs/create-web-icons-cli-mpc#readme",
   "files": [
     "dist",
     "README.md",
