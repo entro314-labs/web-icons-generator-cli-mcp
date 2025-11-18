@@ -71,13 +71,69 @@ create-icons logo.svg --output ./public
 # Custom Safari pinned tab color
 create-icons logo.svg --color "#ff5733"
 
+# Choose generation mode
+create-icons logo.svg --mode nextjs    # Next.js App Router (app/)
+create-icons logo.svg --mode traditional  # Traditional web app (public/)
+create-icons logo.svg --mode auto      # Auto-detect (default)
+
 # Full example
-create-icons logo.svg -o ./static -c "#1a1a1a"
+create-icons logo.svg -o ./app -m nextjs -c "#1a1a1a"
+```
+
+## Generation Modes
+
+The tool supports two generation modes for maximum compatibility:
+
+### 🚀 Next.js App Router Mode (`--mode nextjs`)
+
+**Perfect for Next.js 13+ with App Router**
+
+Generated files (in `app/` directory):
+- `favicon.ico` (32×32)
+- `icon.png` (512×512) - auto-linked by Next.js
+- `apple-icon.png` (180×180) - auto-linked by Next.js
+- `apple-touch-icon.png` (180×180) - for compatibility
+- `icon.svg` (if source is SVG) - auto-linked by Next.js
+
+**Benefits:**
+- ✅ Zero configuration - icons auto-linked by Next.js
+- ✅ No manual `<head>` tags needed
+- ✅ Automatic metadata generation
+- ✅ Cleaner project structure
+
+**Usage:**
+```bash
+create-icons logo.svg --mode nextjs
+# or let it auto-detect
+create-icons logo.svg  # detects Next.js App Router automatically
+```
+
+### 📁 Traditional Mode (`--mode traditional`)
+
+**Perfect for all other frameworks and traditional web apps**
+
+Generated files (in `public/` directory):
+- `favicon.ico` (32×32)
+- `icon.svg` (scalable)
+- `icon-192.png` (192×192) - for PWA
+- `icon-512.png` (512×512) - for PWA
+- `apple-touch-icon.png` (180×180)
+- `icon-maskable.png` (512×512, with padding) - for Android
+- `safari-pinned-tab.svg` (monochrome) - for Safari
+- `site.webmanifest` (PWA manifest)
+
+**Requires:** Manual HTML integration (copy from `html-snippet.txt`)
+
+**Usage:**
+```bash
+create-icons logo.svg --mode traditional
 ```
 
 ## Generated Files
 
-The tool generates these files in your output directory:
+## Generated Files
+
+**Traditional Mode** generates these files in your output directory:
 
 ```
 /public/
@@ -92,20 +148,46 @@ The tool generates these files in your output directory:
   └── html-snippet.txt         (copy/paste to <head>)
 ```
 
+**Next.js App Router Mode** generates these files in your app directory:
+
+```
+/app/
+  ├── favicon.ico              (32×32)
+  ├── icon.png                 (512×512, auto-linked)
+  ├── icon.svg                 (scalable, auto-linked)
+  ├── apple-icon.png           (180×180, auto-linked)
+  ├── apple-touch-icon.png     (180×180, compatibility)
+  └── html-snippet.txt         (integration guide)
+```
+
 ## Framework Detection
 
-The tool automatically detects your framework and uses the correct output directory:
+The tool automatically detects your framework and uses the correct output directory and mode:
 
-| Framework  | Config File        | Output Directory |
-|------------|-------------------|------------------|
-| Next.js    | `next.config.js`  | `public/`        |
-| Astro      | `astro.config.mjs`| `public/`        |
-| SvelteKit  | `svelte.config.js`| `static/`        |
-| Remix      | `remix.config.js` | `public/`        |
-| Vite       | `vite.config.js`  | `public/`        |
-| **Default**    | **None detected**     | **Current directory (`.`)** |
+| Framework  | Config File        | Default Mode | Output Directory |
+|------------|-------------------|--------------|------------------|
+| Next.js (App Router) | `next.config.js` + `app/` | `nextjs` | `app/` |
+| Next.js (Pages) | `next.config.js` | `traditional` | `public/` |
+| Astro      | `astro.config.mjs`| `traditional` | `public/`        |
+| SvelteKit  | `svelte.config.js`| `traditional` | `static/`        |
+| Remix      | `remix.config.js` | `traditional` | `public/`        |
+| Vite       | `vite.config.js`  | `traditional` | `public/`        |
+| **Default**    | **None detected**     | `traditional` | **`public/`** |
 
 ## HTML Integration
+
+### Next.js App Router (Auto-Linked)
+
+No manual HTML needed! Next.js automatically generates these tags:
+
+```html
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
+<link rel="apple-touch-icon" href="/apple-icon.png" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+```
+
+### Traditional Mode (Manual Integration)
 
 After generation, copy the contents of `html-snippet.txt` to your HTML `<head>`:
 
@@ -139,12 +221,13 @@ After generation, copy the contents of `html-snippet.txt` to your HTML `<head>`:
 ## How It Works
 
 1. **Looks for `app-icon.svg` or `app-icon.png`** in current directory (or uses provided path)
-2. **Detects your framework** (Next.js, Astro, etc.) or defaults to current directory
-3. **Converts & resizes** your source image to all required sizes
-4. **Generates maskable icon** with proper 20% safe zone padding
-5. **Creates monochrome SVG** for Safari pinned tabs (SVG sources only)
-6. **Generates manifest** with correct icon references
-7. **Outputs HTML snippet** ready to paste in your `<head>`
+2. **Detects your framework** (Next.js, Astro, etc.) and determines the best generation mode
+3. **Auto-selects mode**: Next.js App Router → `nextjs` mode, others → `traditional` mode
+4. **Converts & resizes** your source image to all required sizes for the selected mode
+5. **Generates maskable icon** with proper 20% safe zone padding (traditional mode)
+6. **Creates monochrome SVG** for Safari pinned tabs (SVG sources only, traditional mode)
+7. **Generates manifest** with correct icon references (traditional mode)
+8. **Outputs integration guide** in `html-snippet.txt`
 
 ## Why This Tool?
 
@@ -153,12 +236,15 @@ Most icon generators are:
 - ❌ Online-only (require uploading your logo)
 - ❌ Not framework-aware (manual directory setup)
 - ❌ Missing modern features (maskable icons, SVG favicons)
+- ❌ Don't support Next.js App Router conventions
 
 This tool:
 - ✅ Generates only what you need (2025 standards)
 - ✅ Works offline (CLI-based)
 - ✅ Auto-detects your framework
 - ✅ Includes modern PWA features
+- ✅ **Supports Next.js App Router with zero-config auto-linking**
+- ✅ **Dual-mode support**: traditional web apps + Next.js
 
 ## Examples
 

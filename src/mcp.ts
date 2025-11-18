@@ -19,11 +19,13 @@ const GenerateWebIconsSchema = z.object({
   outputDir: z.string().optional().describe('Output directory (auto-detected if not provided)'),
   color: z.string().optional().default('#5bbad5').describe('Color for Safari pinned tab icon'),
   projectPath: z.string().optional().describe('Project root path for framework detection'),
+  mode: z.enum(['traditional', 'nextjs', 'auto']).optional().default('auto').describe('Generation mode: traditional (public/), nextjs (app/), or auto-detect'),
 });
 
 const AutoGenerateIconsSchema = z.object({
   projectPath: z.string().describe('Project root directory to search for app-icon.svg or app-icon.png'),
   color: z.string().optional().default('#5bbad5').describe('Color for Safari pinned tab icon'),
+  mode: z.enum(['traditional', 'nextjs', 'auto']).optional().default('auto').describe('Generation mode: traditional (public/), nextjs (app/), or auto-detect'),
 });
 
 const CheckIconsStatusSchema = z.object({
@@ -72,7 +74,7 @@ server.onerror = (error) => console.error('[MCP Error]', error);
       tools: [
         {
           name: 'generate_web_icons',
-          description: 'Generate all required web app icons from a source image (SVG, PNG, or JPG). Creates 8 essential files including favicon, PWA icons, Apple touch icon, and manifest.',
+          description: 'Generate all required web app icons from a source image (SVG, PNG, or JPG). Creates 8 essential files including favicon, PWA icons, Apple touch icon, and manifest. Supports both traditional (public/) and Next.js App Router (app/) modes.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -92,13 +94,18 @@ server.onerror = (error) => console.error('[MCP Error]', error);
                 type: 'string',
                 description: 'Project root path for framework detection',
               },
+              mode: {
+                type: 'string',
+                enum: ['traditional', 'nextjs', 'auto'],
+                description: 'Generation mode: traditional (public/ with manual HTML), nextjs (app/ with auto-linking), or auto-detect (default)',
+              },
             },
             required: ['sourcePath'],
           },
         },
         {
           name: 'auto_generate_icons',
-          description: 'Automatically find app-icon.svg or app-icon.png in project directory and generate all web icons. Perfect for zero-config icon generation.',
+          description: 'Automatically find app-icon.svg or app-icon.png in project directory and generate all web icons. Perfect for zero-config icon generation. Supports both traditional (public/) and Next.js App Router (app/) modes.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -109,6 +116,11 @@ server.onerror = (error) => console.error('[MCP Error]', error);
               color: {
                 type: 'string',
                 description: 'Hex color for Safari pinned tab icon (default: #5bbad5)',
+              },
+              mode: {
+                type: 'string',
+                enum: ['traditional', 'nextjs', 'auto'],
+                description: 'Generation mode: traditional (public/ with manual HTML), nextjs (app/ with auto-linking), or auto-detect (default)',
               },
             },
             required: ['projectPath'],
@@ -200,30 +212,65 @@ async function handleGenerateWebIcons(args: unknown) {
     // Detect framework and determine output directory
     const detector = new FrameworkDetector(projectPath);
     const framework = await detector.detect();
-    const outputDir = parsed.outputDir
-      ? path.resolve(projectPath, parsed.outputDir)
-      : await detector.getPublicDir();
+    const hasAppRouter = await detector.hasAppRouter();
+
+    let mode = parsed.mode || 'auto';
+    let outputDir: string;
+
+    if (parsed.outputDir) {
+      outputDir = path.resolve(projectPath, parsed.outputDir);
+      // If output is explicitly set and mode is auto, determine mode from path
+      if (mode === 'auto') {
+        const outputBasename = path.basename(outputDir);
+        mode = (outputBasename === 'app' || outputDir.includes('/app')) ? 'nextjs' : 'traditional';
+      }
+    } else {
+      // Auto-detect output directory based on mode and framework
+      if (mode === 'auto' && hasAppRouter && framework?.name === 'Next.js') {
+        mode = 'nextjs';
+      } else if (mode === 'auto') {
+        mode = 'traditional';
+      }
+
+      // Set output directory based on mode
+      if (mode === 'nextjs' && hasAppRouter) {
+        outputDir = await detector.getAppDir() || await detector.getPublicDir();
+      } else {
+        outputDir = await detector.getPublicDir();
+      }
+    }
 
     // Generate icons
     const generator = new IconGenerator({
       sourcePath,
       outputDir,
       color: parsed.color,
+      mode: mode as 'traditional' | 'nextjs' | 'auto',
     });
 
     await generator.generate();
+    const actualMode = generator.getMode();
 
     const frameworkInfo = framework
-      ? `Detected ${framework.name} → using ${framework.publicDir}/ directory`
-      : 'No framework detected → using public/ directory';
+      ? `Detected ${framework.name} → using ${actualMode === 'nextjs' ? 'app' : framework.publicDir}/ directory (${actualMode} mode)`
+      : `No framework detected → using public/ directory (${actualMode} mode)`;
 
-    const htmlSnippet = `<!-- Favicon (modern + fallback) -->\n<link rel="icon" href="/icon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon.ico" sizes="any">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n\n<!-- Safari Pinned Tab -->\n<link rel="mask-icon" href="/safari-pinned-tab.svg" color="${parsed.color || '#5bbad5'}">`;
+    let htmlSnippet: string;
+    let filesList: string;
+
+    if (actualMode === 'nextjs') {
+      htmlSnippet = `Next.js App Router Mode - Icons are automatically linked!\n\nGenerated files in app/:\n- favicon.ico (32×32)\n- icon.png (512×512) - auto-linked\n- apple-icon.png (180×180) - auto-linked\n${sourcePath.toLowerCase().endsWith('.svg') ? '- icon.svg - auto-linked' : ''}\n\nNo manual <link> tags needed!`;
+      filesList = '- favicon.ico, icon.png, apple-icon.png, apple-touch-icon.png (compatibility)';
+    } else {
+      htmlSnippet = `<!-- Favicon (modern + fallback) -->\n<link rel="icon" href="/icon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon.ico" sizes="any">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n\n<!-- Safari Pinned Tab -->\n<link rel="mask-icon" href="/safari-pinned-tab.svg" color="${parsed.color || '#5bbad5'}">`;
+      filesList = '- favicon.ico (32×32)\n- icon.svg (scalable)\n- icon-192.png (192×192)\n- icon-512.png (512×512)\n- apple-touch-icon.png (180×180)\n- icon-maskable.png (512×512, with padding)\n- safari-pinned-tab.svg (monochrome)\n- site.webmanifest (PWA manifest)';
+    }
 
     return {
       content: [
         {
           type: 'text',
-          text: `✨ Successfully generated web icons!\n\n${frameworkInfo}\nOutput: ${path.relative(projectPath, outputDir)}/\n\nGenerated files:\n- favicon.ico (32×32)\n- icon.svg (scalable)\n- icon-192.png (192×192)\n- icon-512.png (512×512)\n- apple-touch-icon.png (180×180)\n- icon-maskable.png (512×512, with padding)\n- safari-pinned-tab.svg (monochrome)\n- site.webmanifest (PWA manifest)\n- html-snippet.txt\n\n📝 Add these tags to your HTML <head>:\n\n${htmlSnippet}\n\n💡 Tip: Use the integrate_icons_html tool to automatically add these tags to your HTML files.`,
+          text: `✨ Successfully generated web icons!\n\n${frameworkInfo}\nOutput: ${path.relative(projectPath, outputDir)}/\n\nGenerated files:\n${filesList}\n- html-snippet.txt\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}${actualMode === 'traditional' ? '\n\n💡 Tip: Use the integrate_icons_html tool to automatically add these tags to your HTML files.' : ''}`,
         },
       ],
     };
@@ -242,28 +289,56 @@ async function handleAutoGenerateIcons(args: unknown) {
     // Detect framework and determine output directory
     const detector = new FrameworkDetector(projectPath);
     const framework = await detector.detect();
-    const outputDir = await detector.getPublicDir();
+    const hasAppRouter = await detector.hasAppRouter();
+
+    let mode = parsed.mode || 'auto';
+    let outputDir: string;
+
+    // Auto-detect output directory based on mode and framework
+    if (mode === 'auto' && hasAppRouter && framework?.name === 'Next.js') {
+      mode = 'nextjs';
+    } else if (mode === 'auto') {
+      mode = 'traditional';
+    }
+
+    // Set output directory based on mode
+    if (mode === 'nextjs' && hasAppRouter) {
+      outputDir = await detector.getAppDir() || await detector.getPublicDir();
+    } else {
+      outputDir = await detector.getPublicDir();
+    }
 
     // Generate icons
     const generator = new IconGenerator({
       sourcePath: appIconPath,
       outputDir,
       color: parsed.color,
+      mode: mode as 'traditional' | 'nextjs' | 'auto',
     });
 
     await generator.generate();
+    const actualMode = generator.getMode();
 
     const frameworkInfo = framework
-      ? `Detected ${framework.name} → using ${framework.publicDir}/ directory`
-      : 'No framework detected → using public/ directory';
+      ? `Detected ${framework.name} → using ${actualMode === 'nextjs' ? 'app' : framework.publicDir}/ directory (${actualMode} mode)`
+      : `No framework detected → using public/ directory (${actualMode} mode)`;
 
-    const htmlSnippet = `<!-- Favicon (modern + fallback) -->\n<link rel="icon" href="/icon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon.ico" sizes="any">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n\n<!-- Safari Pinned Tab -->\n<link rel="mask-icon" href="/safari-pinned-tab.svg" color="${parsed.color || '#5bbad5'}">`;
+    let htmlSnippet: string;
+    let filesList: string;
+
+    if (actualMode === 'nextjs') {
+      htmlSnippet = `Next.js App Router Mode - Icons are automatically linked!\n\nNo manual <link> tags needed!`;
+      filesList = '- favicon.ico, icon.png, apple-icon.png, apple-touch-icon.png';
+    } else {
+      htmlSnippet = `<!-- Favicon (modern + fallback) -->\n<link rel="icon" href="/icon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon.ico" sizes="any">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n\n<!-- Safari Pinned Tab -->\n<link rel="mask-icon" href="/safari-pinned-tab.svg" color="${parsed.color || '#5bbad5'}">`;
+      filesList = '- 8 icon files (favicon, PWA icons, Apple touch icon, maskable icon)\n- site.webmanifest (PWA manifest)';
+    }
 
     return {
       content: [
         {
           type: 'text',
-          text: `✨ Successfully generated web icons!\n\nFound: ${path.basename(appIconPath)}\n${frameworkInfo}\nOutput: ${path.relative(projectPath, outputDir)}/\n\nGenerated files:\n- 8 icon files (favicon, PWA icons, Apple touch icon, maskable icon)\n- site.webmanifest (PWA manifest)\n- html-snippet.txt\n\n📝 Add these tags to your HTML <head>:\n\n${htmlSnippet}\n\n💡 Tip: Use the integrate_icons_html tool to automatically add these tags to your HTML files.`,
+          text: `✨ Successfully generated web icons!\n\nFound: ${path.basename(appIconPath)}\n${frameworkInfo}\nOutput: ${path.relative(projectPath, outputDir)}/\n\nGenerated files:\n${filesList}\n- html-snippet.txt\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}${actualMode === 'traditional' ? '\n\n💡 Tip: Use the integrate_icons_html tool to automatically add these tags to your HTML files.' : ''}`,
         },
       ],
     };

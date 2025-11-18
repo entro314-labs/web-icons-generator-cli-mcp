@@ -9,6 +9,7 @@ import { IconGenerator } from './generator.js';
 import { FrameworkDetector, validateSourceFile, findAppIcon } from './utils.js';
 import { readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
+import type { GenerationMode } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +36,7 @@ async function main() {
     .argument('[source]', 'Source image file (SVG, PNG, or JPG)')
     .option('-o, --output <dir>', 'Output directory (auto-detected if not specified)')
     .option('-c, --color <color>', 'Color for Safari pinned tab icon (default: #5bbad5)', '#5bbad5')
+    .option('-m, --mode <mode>', 'Generation mode: traditional (public/), nextjs (app/), or auto-detect', 'auto')
     .option('--mcp', 'Run as MCP server (for Claude Desktop integration)')
     .action(async (source: string | undefined, options) => {
       // If --mcp flag is provided, start MCP server instead
@@ -91,15 +93,60 @@ async function main() {
         // Detect framework and output directory
         const detector = new FrameworkDetector(cwd);
         const framework = await detector.detect();
+        const hasAppRouter = await detector.hasAppRouter();
+
+        // Determine generation mode
+        let mode: GenerationMode = options.mode as GenerationMode;
+
+        // Validate mode option
+        if (!['traditional', 'nextjs', 'auto'].includes(mode)) {
+          console.log(chalk.yellow(`⚠️  Invalid mode "${mode}". Using "auto" instead.`));
+          mode = 'auto';
+        }
 
         let outputDir: string;
         if (options.output) {
           outputDir = path.resolve(cwd, options.output);
+
+          // If output is explicitly set and mode is auto, determine mode from path
+          if (mode === 'auto') {
+            const outputBasename = path.basename(outputDir);
+            if (outputBasename === 'app' || outputDir.includes('/app')) {
+              mode = 'nextjs';
+            } else {
+              mode = 'traditional';
+            }
+          }
         } else {
-          outputDir = await detector.getPublicDir();
+          // Auto-detect output directory based on mode and framework
+          if (mode === 'auto' && hasAppRouter && framework?.name === 'Next.js') {
+            // Suggest Next.js App Router mode
+            const response = await prompts({
+              type: 'select',
+              name: 'selectedMode',
+              message: 'Next.js App Router detected. Choose generation mode:',
+              choices: [
+                { title: '🚀 Next.js App Router (app/) - Recommended', value: 'nextjs', description: 'Auto-linked icons in app/ directory' },
+                { title: '📁 Traditional (public/)', value: 'traditional', description: 'Manual HTML integration required' },
+              ],
+              initial: 0,
+            });
+
+            mode = response.selectedMode || 'nextjs';
+          } else if (mode === 'auto') {
+            mode = 'traditional';
+          }
+
+          // Set output directory based on mode
+          if (mode === 'nextjs' && hasAppRouter) {
+            outputDir = await detector.getAppDir() || await detector.getPublicDir();
+          } else {
+            outputDir = await detector.getPublicDir();
+          }
 
           if (framework) {
-            console.log(chalk.blue(`✓ Detected ${framework.name} → using ${chalk.bold(framework.publicDir)}/ directory`));
+            const targetDir = mode === 'nextjs' && hasAppRouter ? 'app' : framework.publicDir;
+            console.log(chalk.blue(`✓ Detected ${framework.name} → using ${chalk.bold(targetDir)}/ directory (${mode} mode)`));
           } else {
             console.log(chalk.yellow('⚠️  No framework detected → using public/ directory'));
           }
@@ -136,31 +183,56 @@ async function main() {
             sourcePath,
             outputDir,
             color: options.color,
+            mode: mode,
           });
 
           await generator.generate();
           generateSpinner.succeed(chalk.green('Icons generated successfully!'));
+
+          const actualMode = generator.getMode();
+
+          // Summary - different for each mode
+          console.log(chalk.bold.green('\n✨ Success! Generated files:\n'));
+
+          if (actualMode === 'nextjs') {
+            console.log(chalk.gray('  ├── favicon.ico (32×32)'));
+            console.log(chalk.gray('  ├── icon.png (512×512) - auto-linked by Next.js'));
+            console.log(chalk.gray('  ├── apple-icon.png (180×180) - auto-linked by Next.js'));
+            console.log(chalk.gray('  ├── apple-touch-icon.png (180×180) - for compatibility'));
+            if (sourcePath.toLowerCase().endsWith('.svg')) {
+              console.log(chalk.gray('  ├── icon.svg (scalable) - auto-linked by Next.js'));
+            }
+            console.log(chalk.gray('  └── html-snippet.txt (integration guide)\n'));
+
+            console.log(chalk.bold.cyan('📋 Next.js App Router Mode:\n'));
+            console.log(chalk.white('✓ Icons are automatically linked by Next.js'));
+            console.log(chalk.white('✓ No manual <head> tags needed!'));
+            console.log(chalk.white(`✓ Files placed in ${chalk.bold(path.relative(cwd, outputDir) || '.')}/`));
+            console.log(chalk.white(`✓ See ${chalk.bold('html-snippet.txt')} for details\n`));
+          } else {
+            console.log(chalk.gray('  ├── favicon.ico (32×32)'));
+            if (sourcePath.toLowerCase().endsWith('.svg')) {
+              console.log(chalk.gray('  ├── icon.svg (scalable)'));
+            }
+            console.log(chalk.gray('  ├── icon-192.png (192×192)'));
+            console.log(chalk.gray('  ├── icon-512.png (512×512)'));
+            console.log(chalk.gray('  ├── apple-touch-icon.png (180×180)'));
+            console.log(chalk.gray('  ├── icon-maskable.png (512×512, with padding)'));
+            if (sourcePath.toLowerCase().endsWith('.svg')) {
+              console.log(chalk.gray('  ├── safari-pinned-tab.svg (monochrome)'));
+            }
+            console.log(chalk.gray('  ├── site.webmanifest'));
+            console.log(chalk.gray('  └── html-snippet.txt\n'));
+
+            console.log(chalk.bold.cyan('📋 Next steps:\n'));
+            console.log(chalk.white(`1. Review generated files in ${chalk.bold(path.relative(cwd, outputDir) || '.')}/`));
+            console.log(chalk.white(`2. Copy HTML snippet from ${chalk.bold('html-snippet.txt')} to your <head> tag`));
+            console.log(chalk.white('3. Deploy and test on different devices!\n'));
+          }
         } catch (error) {
           generateSpinner.fail(chalk.red('Generation failed'));
           throw error;
         }
-
-        // Summary
-        console.log(chalk.bold.green('\n✨ Success! Generated files:\n'));
-        console.log(chalk.gray('  ├── favicon.ico (32×32)'));
-        console.log(chalk.gray('  ├── icon.svg (scalable)'));
-        console.log(chalk.gray('  ├── icon-192.png (192×192)'));
-        console.log(chalk.gray('  ├── icon-512.png (512×512)'));
-        console.log(chalk.gray('  ├── apple-touch-icon.png (180×180)'));
-        console.log(chalk.gray('  ├── icon-maskable.png (512×512, with padding)'));
-        console.log(chalk.gray('  ├── safari-pinned-tab.svg (monochrome)'));
-        console.log(chalk.gray('  ├── site.webmanifest'));
-        console.log(chalk.gray('  └── html-snippet.txt\n'));
-
-        console.log(chalk.bold.cyan('📋 Next steps:\n'));
-        console.log(chalk.white(`1. Review generated files in ${chalk.bold(path.relative(cwd, outputDir) || '.')}/`));
-        console.log(chalk.white(`2. Copy HTML snippet from ${chalk.bold('html-snippet.txt')} to your <head> tag`));
-        console.log(chalk.white('3. Deploy and test on different devices!\n'));
 
       } catch (error) {
         if (error instanceof Error) {

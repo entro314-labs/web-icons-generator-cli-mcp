@@ -32,6 +32,25 @@ export class FrameworkDetector {
     // Default to 'public' directory if no framework detected
     return path.join(this.cwd, 'public');
   }
+
+  async getAppDir(): Promise<string | null> {
+    const framework = await this.detect();
+    if (framework && framework.appDir) {
+      const appDirPath = path.join(this.cwd, framework.appDir);
+      try {
+        await fs.access(appDirPath);
+        return appDirPath;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  async hasAppRouter(): Promise<boolean> {
+    const appDir = await this.getAppDir();
+    return appDir !== null;
+  }
 }
 
 export async function findAppIcon(cwd: string = process.cwd()): Promise<string | null> {

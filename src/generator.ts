@@ -5,9 +5,21 @@ import { ICON_CONFIGS, type IconConfig, type GeneratorOptions } from './types.js
 
 export class IconGenerator {
   private options: GeneratorOptions;
+  private mode: 'traditional' | 'nextjs';
 
   constructor(options: GeneratorOptions) {
     this.options = options;
+    // Determine actual mode (resolve 'auto' to concrete mode)
+    this.mode = this.resolveMode(options.mode || 'traditional');
+  }
+
+  private resolveMode(mode: GeneratorOptions['mode']): 'traditional' | 'nextjs' {
+    if (mode === 'auto') {
+      // Auto-detect based on output directory
+      const outputDirName = path.basename(this.options.outputDir);
+      return outputDirName === 'app' || this.options.outputDir.includes('/app') ? 'nextjs' : 'traditional';
+    }
+    return mode || 'traditional';
   }
 
   async generate(): Promise<void> {
@@ -17,23 +29,33 @@ export class IconGenerator {
     // Check if source is SVG
     const isSourceSVG = this.options.sourcePath.toLowerCase().endsWith('.svg');
 
+    // Filter icons based on mode
+    const iconsToGenerate = ICON_CONFIGS.filter(config => {
+      if (!config.mode || config.mode === 'both') return true;
+      return config.mode === this.mode;
+    });
+
     // Generate all icon sizes
     await Promise.all(
-      ICON_CONFIGS.map((config) => this.generateIcon(config))
+      iconsToGenerate.map((config) => this.generateIcon(config))
     );
 
     // Handle SVG-specific files
     if (isSourceSVG) {
       await this.copySVGSource();
-      await this.generateSafariPinnedTab();
+      // Only generate safari-pinned-tab for traditional mode (goes in public/)
+      if (this.mode === 'traditional') {
+        await this.generateSafariPinnedTab();
+      }
     } else {
       // If source is PNG/JPG, we can't generate proper SVG
-      // We'll create a note for the user
       console.warn('⚠️  Source is not SVG. icon.svg and safari-pinned-tab.svg will need to be created manually.');
     }
 
-    // Generate site.webmanifest
-    await this.generateManifest();
+    // Generate site.webmanifest (only for traditional mode)
+    if (this.mode === 'traditional') {
+      await this.generateManifest();
+    }
 
     // Generate HTML snippet
     await this.generateHTMLSnippet();
@@ -126,7 +148,30 @@ export class IconGenerator {
   }
 
   private async generateHTMLSnippet(): Promise<void> {
-    const snippet = `<!-- Favicon (modern + fallback) -->
+    let snippet: string;
+
+    if (this.mode === 'nextjs') {
+      // Next.js App Router mode - no manual HTML needed, just instructions
+      snippet = `<!-- Next.js App Router Mode -->
+<!-- Icons are automatically linked by Next.js from the /app directory -->
+<!-- No manual <link> tags needed! -->
+
+Generated files in app/:
+- favicon.ico (32×32) - automatically linked as /favicon.ico
+- icon.png (512×512) - automatically linked with proper metadata
+- apple-icon.png (180×180) - automatically linked as apple-touch-icon
+${this.options.sourcePath.toLowerCase().endsWith('.svg') ? '- icon.svg - automatically linked with type="image/svg+xml"' : ''}
+
+Next.js will automatically generate these <head> tags:
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
+<link rel="apple-touch-icon" href="/apple-icon.png" sizes="180x180" />
+${this.options.sourcePath.toLowerCase().endsWith('.svg') ? '<link rel="icon" href="/icon.svg" type="image/svg+xml" />' : ''}
+
+For PWA support, add site.webmanifest to public/ and reference it in your layout.tsx metadata.`;
+    } else {
+      // Traditional mode - full HTML snippet
+      snippet = `<!-- Favicon (modern + fallback) -->
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="any">
 
@@ -138,8 +183,13 @@ export class IconGenerator {
 
 <!-- Safari Pinned Tab -->
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="${this.options.color || '#5bbad5'}">`;
+    }
 
     const outputPath = path.join(this.options.outputDir, 'html-snippet.txt');
     await fs.writeFile(outputPath, snippet);
+  }
+
+  getMode(): 'traditional' | 'nextjs' {
+    return this.mode;
   }
 }
