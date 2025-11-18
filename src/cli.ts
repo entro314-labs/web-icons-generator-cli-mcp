@@ -178,61 +178,66 @@ async function main() {
         // Generate icons
         const generateSpinner = ora('Generating icons...').start();
 
-        try {
-          const generator = new IconGenerator({
-            sourcePath,
-            outputDir,
-            color: options.color,
-            mode: mode,
-          });
+        const generator = new IconGenerator({
+          sourcePath,
+          outputDir,
+          projectRoot: cwd,
+          color: options.color,
+          mode: mode,
+        });
 
-          await generator.generate();
-          generateSpinner.succeed(chalk.green('Icons generated successfully!'));
+        await generator.generate();
+        generateSpinner.succeed(chalk.green('Icons generated successfully!'));
 
-          const actualMode = generator.getMode();
+        const actualMode = generator.getMode();
+        const outputDirRelative = path.relative(cwd, outputDir) || '.';
+        const instructionsFile = path.relative(cwd, generator.getInstructionsFilePath());
 
-          // Summary - different for each mode
-          console.log(chalk.bold.green('\n✨ Success! Generated files:\n'));
+        // Summary - different for each mode
+        console.log(chalk.bold.green('\n✨ Success! Generated files:\n'));
 
-          if (actualMode === 'nextjs') {
-            console.log(chalk.gray('  ├── favicon.ico (32×32)'));
-            console.log(chalk.gray('  ├── icon.png (512×512) - auto-linked by Next.js'));
-            console.log(chalk.gray('  ├── apple-icon.png (180×180) - auto-linked by Next.js'));
-            console.log(chalk.gray('  ├── apple-touch-icon.png (180×180) - for compatibility'));
-            if (sourcePath.toLowerCase().endsWith('.svg')) {
-              console.log(chalk.gray('  ├── icon.svg (scalable) - auto-linked by Next.js'));
-            }
-            console.log(chalk.gray('  └── html-snippet.txt (integration guide)\n'));
-
-            console.log(chalk.bold.cyan('📋 Next.js App Router Mode:\n'));
-            console.log(chalk.white('✓ Icons are automatically linked by Next.js'));
-            console.log(chalk.white('✓ No manual <head> tags needed!'));
-            console.log(chalk.white(`✓ Files placed in ${chalk.bold(path.relative(cwd, outputDir) || '.')}/`));
-            console.log(chalk.white(`✓ See ${chalk.bold('html-snippet.txt')} for details\n`));
-          } else {
-            console.log(chalk.gray('  ├── favicon.ico (32×32)'));
-            if (sourcePath.toLowerCase().endsWith('.svg')) {
-              console.log(chalk.gray('  ├── icon.svg (scalable)'));
-            }
-            console.log(chalk.gray('  ├── icon-192.png (192×192)'));
-            console.log(chalk.gray('  ├── icon-512.png (512×512)'));
-            console.log(chalk.gray('  ├── apple-touch-icon.png (180×180)'));
-            console.log(chalk.gray('  ├── icon-maskable.png (512×512, with padding)'));
-            if (sourcePath.toLowerCase().endsWith('.svg')) {
-              console.log(chalk.gray('  ├── safari-pinned-tab.svg (monochrome)'));
-            }
-            console.log(chalk.gray('  ├── site.webmanifest'));
-            console.log(chalk.gray('  └── html-snippet.txt\n'));
-
-            console.log(chalk.bold.cyan('📋 Next steps:\n'));
-            console.log(chalk.white(`1. Review generated files in ${chalk.bold(path.relative(cwd, outputDir) || '.')}/`));
-            console.log(chalk.white(`2. Copy HTML snippet from ${chalk.bold('html-snippet.txt')} to your <head> tag`));
-            console.log(chalk.white('3. Deploy and test on different devices!\n'));
+        if (actualMode === 'nextjs') {
+          console.log(chalk.gray('  ├── favicon.ico (32×32)'));
+          console.log(chalk.gray('  ├── icon.png (512×512) - auto-linked by Next.js'));
+          console.log(chalk.gray('  ├── apple-icon.png (180×180) - auto-linked by Next.js'));
+          console.log(chalk.gray('  ├── apple-touch-icon.png (180×180) - for compatibility'));
+          if (sourcePath.toLowerCase().endsWith('.svg')) {
+            console.log(chalk.gray('  ├── icon.svg (scalable) - auto-linked by Next.js'));
           }
-        } catch (error) {
-          generateSpinner.fail(chalk.red('Generation failed'));
-          throw error;
+          console.log(chalk.gray(`  └── In ${chalk.bold(outputDirRelative)}/\n`));
+
+          console.log(chalk.bold.cyan('📋 Next.js App Router Mode:\n'));
+          console.log(chalk.white('✓ Icons are automatically linked by Next.js'));
+          console.log(chalk.white('✓ No manual <head> tags needed!'));
+          console.log(chalk.white(`✓ Integration guide: ${chalk.bold(instructionsFile)}\n`));
+        } else {
+          console.log(chalk.gray('  ├── favicon.ico (32×32)'));
+          if (sourcePath.toLowerCase().endsWith('.svg')) {
+            console.log(chalk.gray('  ├── icon.svg (scalable)'));
+          }
+          console.log(chalk.gray('  ├── icon-192.png (192×192)'));
+          console.log(chalk.gray('  ├── icon-512.png (512×512)'));
+          console.log(chalk.gray('  ├── apple-touch-icon.png (180×180)'));
+          console.log(chalk.gray('  ├── icon-maskable.png (512×512, with padding)'));
+          if (sourcePath.toLowerCase().endsWith('.svg')) {
+            console.log(chalk.gray('  ├── safari-pinned-tab.svg (monochrome)'));
+          }
+          console.log(chalk.gray('  ├── site.webmanifest'));
+          console.log(chalk.gray(`  └── In ${chalk.bold(outputDirRelative)}/\n`));
+
+          console.log(chalk.bold.cyan('📋 Next steps:\n'));
+          console.log(chalk.white(`1. Review integration guide: ${chalk.bold(instructionsFile)}`));
+          console.log(chalk.white(`2. Copy HTML snippet to your <head> tag`));
+          console.log(chalk.white('3. Deploy and test on different devices!\n'));
         }
+
+        // AI-ready prompt
+        const aiPrompt = generator.generateAIPrompt(framework?.name || null, outputDirRelative);
+        console.log(chalk.bold.magenta('🤖 AI Assistant Prompt:\n'));
+        console.log(chalk.gray('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
+        console.log(chalk.white(aiPrompt));
+        console.log(chalk.gray('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
+        console.log(chalk.dim('💡 Copy the above prompt to ask an AI assistant to verify your setup\n'));
 
       } catch (error) {
         if (error instanceof Error) {

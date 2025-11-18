@@ -10,6 +10,7 @@ export type GenerationMode = 'traditional' | 'nextjs' | 'auto';
 export interface GeneratorOptions {
   sourcePath: string;
   outputDir: string;
+  projectRoot?: string; // Project root directory for placing instructions file
   color?: string; // For safari-pinned-tab.svg
   mode?: GenerationMode; // Generation mode (traditional web app vs Next.js App Router)
 }

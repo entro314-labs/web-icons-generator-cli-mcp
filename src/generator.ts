@@ -185,11 +185,30 @@ For PWA support, add site.webmanifest to public/ and reference it in your layout
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="${this.options.color || '#5bbad5'}">`;
     }
 
-    const outputPath = path.join(this.options.outputDir, 'html-snippet.txt');
+    // Save to project root instead of output directory
+    const outputPath = path.join(this.options.projectRoot || this.options.outputDir, 'icon-integration-guide.txt');
     await fs.writeFile(outputPath, snippet);
   }
 
   getMode(): 'traditional' | 'nextjs' {
     return this.mode;
+  }
+
+  getInstructionsFilePath(): string {
+    return path.join(this.options.projectRoot || this.options.outputDir, 'icon-integration-guide.txt');
+  }
+
+  generateAIPrompt(framework: string | null, outputDirRelative: string): string {
+    const frameworkName = framework || 'web application';
+    const instructionsPath = path.relative(
+      this.options.projectRoot || this.options.outputDir,
+      this.getInstructionsFilePath()
+    ) || 'icon-integration-guide.txt';
+
+    if (this.mode === 'nextjs') {
+      return `I generated web app icons in the ${outputDirRelative} directory for this ${frameworkName}. Please read the integration guide at ${instructionsPath} and verify that all icon files are correctly placed in the app/ directory and that Next.js will auto-link them properly. Check that the project structure follows Next.js App Router conventions.`;
+    } else {
+      return `I generated web app icons in the ${outputDirRelative} directory for this ${frameworkName}. Please read the integration guide at ${instructionsPath} and make sure everything is wired together correctly by adding the required HTML <link> tags to the appropriate layout/HTML files. Verify the icon paths are correct and all files are accessible.`;
+    }
   }
 }

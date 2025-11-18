@@ -144,20 +144,24 @@ create-icons logo.svg --mode traditional
   ├── apple-touch-icon.png     (180×180)
   ├── icon-maskable.png        (512×512, with padding)
   ├── safari-pinned-tab.svg    (monochrome)
-  ├── site.webmanifest         (PWA manifest)
-  └── html-snippet.txt         (copy/paste to <head>)
+  └── site.webmanifest         (PWA manifest)
+
+/  (project root)
+  └── icon-integration-guide.txt  (HTML snippet to copy)
 ```
 
 **Next.js App Router Mode** generates these files in your app directory:
 
 ```
-/app/
+/app/  (or /src/app/)
   ├── favicon.ico              (32×32)
   ├── icon.png                 (512×512, auto-linked)
   ├── icon.svg                 (scalable, auto-linked)
   ├── apple-icon.png           (180×180, auto-linked)
-  ├── apple-touch-icon.png     (180×180, compatibility)
-  └── html-snippet.txt         (integration guide)
+  └── apple-touch-icon.png     (180×180, compatibility)
+
+/  (project root)
+  └── icon-integration-guide.txt  (integration instructions)
 ```
 
 ## Framework Detection
@@ -189,7 +193,7 @@ No manual HTML needed! Next.js automatically generates these tags:
 
 ### Traditional Mode (Manual Integration)
 
-After generation, copy the contents of `html-snippet.txt` to your HTML `<head>`:
+After generation, copy the contents of `icon-integration-guide.txt` to your HTML `<head>`:
 
 ```html
 <!-- Favicon (modern + fallback) -->
@@ -204,6 +208,16 @@ After generation, copy the contents of `html-snippet.txt` to your HTML `<head>`:
 
 <!-- Safari Pinned Tab -->
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+```
+
+### AI Assistant Integration
+
+After generation, the tool provides an AI-ready prompt you can use with Claude, ChatGPT, or other assistants to verify your setup:
+
+```
+I generated web app icons in the [directory] for this [framework] app.
+Please read the integration guide at icon-integration-guide.txt and verify
+that all icon files are correctly placed and properly integrated.
 ```
 
 ## Requirements

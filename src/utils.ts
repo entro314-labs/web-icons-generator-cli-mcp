@@ -36,12 +36,20 @@ export class FrameworkDetector {
   async getAppDir(): Promise<string | null> {
     const framework = await this.detect();
     if (framework && framework.appDir) {
-      const appDirPath = path.join(this.cwd, framework.appDir);
+      // Check for app/ directory in root first
+      const rootAppDir = path.join(this.cwd, framework.appDir);
       try {
-        await fs.access(appDirPath);
-        return appDirPath;
+        await fs.access(rootAppDir);
+        return rootAppDir;
       } catch {
-        return null;
+        // Check for app/ directory in src/ folder
+        const srcAppDir = path.join(this.cwd, 'src', framework.appDir);
+        try {
+          await fs.access(srcAppDir);
+          return srcAppDir;
+        } catch {
+          return null;
+        }
       }
     }
     return null;

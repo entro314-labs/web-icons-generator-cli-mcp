@@ -244,6 +244,7 @@ async function handleGenerateWebIcons(args: unknown) {
     const generator = new IconGenerator({
       sourcePath,
       outputDir,
+      projectRoot: projectPath,
       color: parsed.color,
       mode: mode as 'traditional' | 'nextjs' | 'auto',
     });
@@ -255,11 +256,15 @@ async function handleGenerateWebIcons(args: unknown) {
       ? `Detected ${framework.name} → using ${actualMode === 'nextjs' ? 'app' : framework.publicDir}/ directory (${actualMode} mode)`
       : `No framework detected → using public/ directory (${actualMode} mode)`;
 
+    const outputDirRelative = path.relative(projectPath, outputDir);
+    const instructionsFile = path.relative(projectPath, generator.getInstructionsFilePath());
+    const aiPrompt = generator.generateAIPrompt(framework?.name || null, outputDirRelative);
+
     let htmlSnippet: string;
     let filesList: string;
 
     if (actualMode === 'nextjs') {
-      htmlSnippet = `Next.js App Router Mode - Icons are automatically linked!\n\nGenerated files in app/:\n- favicon.ico (32×32)\n- icon.png (512×512) - auto-linked\n- apple-icon.png (180×180) - auto-linked\n${sourcePath.toLowerCase().endsWith('.svg') ? '- icon.svg - auto-linked' : ''}\n\nNo manual <link> tags needed!`;
+      htmlSnippet = `Next.js App Router Mode - Icons are automatically linked!\n\nGenerated files in ${outputDirRelative}/:\n- favicon.ico (32×32)\n- icon.png (512×512) - auto-linked\n- apple-icon.png (180×180) - auto-linked\n${sourcePath.toLowerCase().endsWith('.svg') ? '- icon.svg - auto-linked' : ''}\n\nNo manual <link> tags needed!`;
       filesList = '- favicon.ico, icon.png, apple-icon.png, apple-touch-icon.png (compatibility)';
     } else {
       htmlSnippet = `<!-- Favicon (modern + fallback) -->\n<link rel="icon" href="/icon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon.ico" sizes="any">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n\n<!-- Safari Pinned Tab -->\n<link rel="mask-icon" href="/safari-pinned-tab.svg" color="${parsed.color || '#5bbad5'}">`;
@@ -270,7 +275,7 @@ async function handleGenerateWebIcons(args: unknown) {
       content: [
         {
           type: 'text',
-          text: `✨ Successfully generated web icons!\n\n${frameworkInfo}\nOutput: ${path.relative(projectPath, outputDir)}/\n\nGenerated files:\n${filesList}\n- html-snippet.txt\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}${actualMode === 'traditional' ? '\n\n💡 Tip: Use the integrate_icons_html tool to automatically add these tags to your HTML files.' : ''}`,
+          text: `✨ Successfully generated web icons!\n\n${frameworkInfo}\nOutput: ${outputDirRelative}/\n\nGenerated files:\n${filesList}\n- Integration guide: ${instructionsFile}\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}\n\n🤖 AI Assistant Prompt:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${aiPrompt}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         },
       ],
     };
@@ -312,6 +317,7 @@ async function handleAutoGenerateIcons(args: unknown) {
     const generator = new IconGenerator({
       sourcePath: appIconPath,
       outputDir,
+      projectRoot: projectPath,
       color: parsed.color,
       mode: mode as 'traditional' | 'nextjs' | 'auto',
     });
@@ -322,6 +328,10 @@ async function handleAutoGenerateIcons(args: unknown) {
     const frameworkInfo = framework
       ? `Detected ${framework.name} → using ${actualMode === 'nextjs' ? 'app' : framework.publicDir}/ directory (${actualMode} mode)`
       : `No framework detected → using public/ directory (${actualMode} mode)`;
+
+    const outputDirRelative = path.relative(projectPath, outputDir);
+    const instructionsFile = path.relative(projectPath, generator.getInstructionsFilePath());
+    const aiPrompt = generator.generateAIPrompt(framework?.name || null, outputDirRelative);
 
     let htmlSnippet: string;
     let filesList: string;
@@ -338,7 +348,7 @@ async function handleAutoGenerateIcons(args: unknown) {
       content: [
         {
           type: 'text',
-          text: `✨ Successfully generated web icons!\n\nFound: ${path.basename(appIconPath)}\n${frameworkInfo}\nOutput: ${path.relative(projectPath, outputDir)}/\n\nGenerated files:\n${filesList}\n- html-snippet.txt\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}${actualMode === 'traditional' ? '\n\n💡 Tip: Use the integrate_icons_html tool to automatically add these tags to your HTML files.' : ''}`,
+          text: `✨ Successfully generated web icons!\n\nFound: ${path.basename(appIconPath)}\n${frameworkInfo}\nOutput: ${outputDirRelative}/\n\nGenerated files:\n${filesList}\n- Integration guide: ${instructionsFile}\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}\n\n🤖 AI Assistant Prompt:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${aiPrompt}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         },
       ],
     };
