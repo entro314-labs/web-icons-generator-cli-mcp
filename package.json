@@ -1,6 +1,6 @@
 {
   "name": "@entro314labs/web-icons-generator-cli-mcp",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Generate all required web app icons and files from a single source image - supports most common frameworks, works as cli and MCP server",
   "main": "dist/index.js",
   "bin": {
@@ -56,6 +56,7 @@
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
     "ora": "^9.0.0",
+    "png-to-ico": "^3.0.1",
     "prompts": "^2.4.2",
     "sharp": "^0.34.5",
     "zod": "^4.1.12"

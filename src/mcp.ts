@@ -20,12 +20,24 @@ const GenerateWebIconsSchema = z.object({
   color: z.string().optional().default('#5bbad5').describe('Color for Safari pinned tab icon'),
   projectPath: z.string().optional().describe('Project root path for framework detection'),
   mode: z.enum(['traditional', 'nextjs', 'auto']).optional().default('auto').describe('Generation mode: traditional (public/), nextjs (app/), or auto-detect'),
+  minimal: z.boolean().optional().default(false).describe('Generate minimal essential icon set only (default: full 2025 standards set)'),
+  // PWA manifest options
+  appName: z.string().optional().describe('Full app name for PWA manifest'),
+  appShortName: z.string().optional().describe('Short app name for PWA manifest (max 12 chars)'),
+  themeColor: z.string().optional().default('#ffffff').describe('Theme color for browser UI and PWA'),
+  backgroundColor: z.string().optional().default('#ffffff').describe('Background color for PWA splash screen'),
 });
 
 const AutoGenerateIconsSchema = z.object({
   projectPath: z.string().describe('Project root directory to search for app-icon.svg or app-icon.png'),
   color: z.string().optional().default('#5bbad5').describe('Color for Safari pinned tab icon'),
   mode: z.enum(['traditional', 'nextjs', 'auto']).optional().default('auto').describe('Generation mode: traditional (public/), nextjs (app/), or auto-detect'),
+  minimal: z.boolean().optional().default(false).describe('Generate minimal essential icon set only (default: full 2025 standards set)'),
+  // PWA manifest options
+  appName: z.string().optional().describe('Full app name for PWA manifest'),
+  appShortName: z.string().optional().describe('Short app name for PWA manifest (max 12 chars)'),
+  themeColor: z.string().optional().default('#ffffff').describe('Theme color for browser UI and PWA'),
+  backgroundColor: z.string().optional().default('#ffffff').describe('Background color for PWA splash screen'),
 });
 
 const CheckIconsStatusSchema = z.object({
@@ -38,23 +50,36 @@ const IntegrateIconsHTMLSchema = z.object({
   color: z.string().optional().default('#5bbad5').describe('Color for Safari pinned tab icon'),
 });
 
-// Required icon files
-const REQUIRED_ICONS = [
+// Required icon files for traditional mode (2025 standards)
+const REQUIRED_ICONS_TRADITIONAL = [
   'favicon.ico',
-  'icon.svg',
-  'icon-192.png',
-  'icon-512.png',
+  'favicon.svg',
+  'favicon-16x16.png',
+  'favicon-32x32.png',
+  'favicon-48x48.png',
+  'favicon-96x96.png',
+  'android-chrome-192x192.png',
+  'android-chrome-512x512.png',
+  'android-chrome-maskable-512x512.png',
   'apple-touch-icon.png',
-  'icon-maskable.png',
   'safari-pinned-tab.svg',
   'site.webmanifest',
+];
+
+// Required icon files for Next.js App Router mode
+const REQUIRED_ICONS_NEXTJS = [
+  'favicon.ico',
+  'icon.svg',
+  'icon.png',
+  'apple-icon.png',
+  'apple-touch-icon.png',
 ];
 
 // Create server instance
 const server = new Server(
   {
     name: 'web-icons-generator',
-    version: '1.0.0',
+    version: '1.2.0',
   },
   {
     capabilities: {
@@ -74,7 +99,7 @@ server.onerror = (error) => console.error('[MCP Error]', error);
       tools: [
         {
           name: 'generate_web_icons',
-          description: 'Generate all required web app icons from a source image (SVG, PNG, or JPG). Creates 8 essential files including favicon, PWA icons, Apple touch icon, and manifest. Supports both traditional (public/) and Next.js App Router (app/) modes.',
+          description: 'Generate all required web app icons from a source image (SVG, PNG, or JPG) following 2025 favicon standards. Creates multi-resolution ICO (16/32/48), individual PNG favicons, Android Chrome icons (192/512/maskable), Apple touch icon, Safari pinned tab, and PWA manifest. Supports both traditional (public/) and Next.js App Router (app/) modes.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -99,13 +124,33 @@ server.onerror = (error) => console.error('[MCP Error]', error);
                 enum: ['traditional', 'nextjs', 'auto'],
                 description: 'Generation mode: traditional (public/ with manual HTML), nextjs (app/ with auto-linking), or auto-detect (default)',
               },
+              minimal: {
+                type: 'boolean',
+                description: 'Generate minimal essential icon set only (default: false for full 2025 standards set)',
+              },
+              appName: {
+                type: 'string',
+                description: 'Full app name for PWA manifest',
+              },
+              appShortName: {
+                type: 'string',
+                description: 'Short app name for PWA manifest (max 12 chars)',
+              },
+              themeColor: {
+                type: 'string',
+                description: 'Theme color for browser UI and PWA (default: #ffffff)',
+              },
+              backgroundColor: {
+                type: 'string',
+                description: 'Background color for PWA splash screen (default: #ffffff)',
+              },
             },
             required: ['sourcePath'],
           },
         },
         {
           name: 'auto_generate_icons',
-          description: 'Automatically find app-icon.svg or app-icon.png in project directory and generate all web icons. Perfect for zero-config icon generation. Supports both traditional (public/) and Next.js App Router (app/) modes.',
+          description: 'Automatically find app-icon.svg or app-icon.png in project directory and generate all web icons following 2025 standards. Creates multi-resolution ICO, PNG favicons (16/32/48/96), Android Chrome icons, Apple touch icon, and PWA manifest. Perfect for zero-config icon generation.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -121,6 +166,26 @@ server.onerror = (error) => console.error('[MCP Error]', error);
                 type: 'string',
                 enum: ['traditional', 'nextjs', 'auto'],
                 description: 'Generation mode: traditional (public/ with manual HTML), nextjs (app/ with auto-linking), or auto-detect (default)',
+              },
+              minimal: {
+                type: 'boolean',
+                description: 'Generate minimal essential icon set only (default: false for full 2025 standards set)',
+              },
+              appName: {
+                type: 'string',
+                description: 'Full app name for PWA manifest',
+              },
+              appShortName: {
+                type: 'string',
+                description: 'Short app name for PWA manifest (max 12 chars)',
+              },
+              themeColor: {
+                type: 'string',
+                description: 'Theme color for browser UI and PWA (default: #ffffff)',
+              },
+              backgroundColor: {
+                type: 'string',
+                description: 'Background color for PWA splash screen (default: #ffffff)',
               },
             },
             required: ['projectPath'],
@@ -241,20 +306,28 @@ async function handleGenerateWebIcons(args: unknown) {
     }
 
     // Generate icons
+    const isMinimal = parsed.minimal || false;
     const generator = new IconGenerator({
       sourcePath,
       outputDir,
       projectRoot: projectPath,
       color: parsed.color,
       mode: mode as 'traditional' | 'nextjs' | 'auto',
+      minimal: isMinimal,
+      appName: parsed.appName,
+      appShortName: parsed.appShortName,
+      themeColor: parsed.themeColor,
+      backgroundColor: parsed.backgroundColor,
     });
 
     await generator.generate();
     const actualMode = generator.getMode();
+    const isSvgSource = sourcePath.toLowerCase().endsWith('.svg');
 
+    const modeLabel = isMinimal ? ' (Minimal)' : ' (Full 2025 Standards)';
     const frameworkInfo = framework
-      ? `Detected ${framework.name} → using ${actualMode === 'nextjs' ? 'app' : framework.publicDir}/ directory (${actualMode} mode)`
-      : `No framework detected → using public/ directory (${actualMode} mode)`;
+      ? `Detected ${framework.name} → using ${actualMode === 'nextjs' ? 'app' : framework.publicDir}/ directory (${actualMode} mode)${modeLabel}`
+      : `No framework detected → using public/ directory (${actualMode} mode)${modeLabel}`;
 
     const outputDirRelative = path.relative(projectPath, outputDir);
     const instructionsFile = path.relative(projectPath, generator.getInstructionsFilePath());
@@ -264,18 +337,23 @@ async function handleGenerateWebIcons(args: unknown) {
     let filesList: string;
 
     if (actualMode === 'nextjs') {
-      htmlSnippet = `Next.js App Router Mode - Icons are automatically linked!\n\nGenerated files in ${outputDirRelative}/:\n- favicon.ico (32×32)\n- icon.png (512×512) - auto-linked\n- apple-icon.png (180×180) - auto-linked\n${sourcePath.toLowerCase().endsWith('.svg') ? '- icon.svg - auto-linked' : ''}\n\nNo manual <link> tags needed!`;
-      filesList = '- favicon.ico, icon.png, apple-icon.png, apple-touch-icon.png (compatibility)';
+      htmlSnippet = `Next.js App Router Mode - Icons are automatically linked!\n\nGenerated files in ${outputDirRelative}/:\n- favicon.ico (32×32)\n- icon.png (512×512) - auto-linked\n- apple-icon.png (180×180) - auto-linked\n${isSvgSource ? '- icon.svg - auto-linked' : ''}\n\nNo manual <link> tags needed!`;
+      filesList = `- favicon.ico (32×32)\n- icon.png (512×512)\n- apple-icon.png (180×180)\n- apple-touch-icon.png (180×180)${isSvgSource ? '\n- icon.svg (scalable)' : ''}`;
+    } else if (isMinimal) {
+      htmlSnippet = `<!-- Favicons (Minimal) -->\n${isSvgSource ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n' : ''}<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">\n<link rel="icon" href="/favicon.ico" sizes="48x48">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n<meta name="theme-color" content="${parsed.themeColor || '#ffffff'}">`;
+      filesList = `- favicon.ico (multi-res: 16×16, 32×32, 48×48)\n- favicon-48x48.png${isSvgSource ? '\n- favicon.svg (scalable)' : ''}\n- android-chrome-192x192.png, android-chrome-512x512.png\n- apple-touch-icon.png (180×180)\n- site.webmanifest (PWA manifest)`;
     } else {
-      htmlSnippet = `<!-- Favicon (modern + fallback) -->\n<link rel="icon" href="/icon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon.ico" sizes="any">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n\n<!-- Safari Pinned Tab -->\n<link rel="mask-icon" href="/safari-pinned-tab.svg" color="${parsed.color || '#5bbad5'}">`;
-      filesList = '- favicon.ico (32×32)\n- icon.svg (scalable)\n- icon-192.png (192×192)\n- icon-512.png (512×512)\n- apple-touch-icon.png (180×180)\n- icon-maskable.png (512×512, with padding)\n- safari-pinned-tab.svg (monochrome)\n- site.webmanifest (PWA manifest)';
+      htmlSnippet = `<!-- Favicons -->\n${isSvgSource ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n' : ''}<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">\n<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">\n<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">\n<link rel="icon" href="/favicon.ico" sizes="48x48">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n<meta name="theme-color" content="${parsed.themeColor || '#ffffff'}">\n\n${isSvgSource ? `<!-- Safari Pinned Tab -->\n<link rel="mask-icon" href="/safari-pinned-tab.svg" color="${parsed.color || '#5bbad5'}">` : ''}`;
+      filesList = `- favicon.ico (multi-res: 16×16, 32×32, 48×48)\n- favicon-16x16.png, favicon-32x32.png, favicon-48x48.png\n- favicon-96x96.png (Google search results)${isSvgSource ? '\n- favicon.svg (scalable)' : ''}\n- android-chrome-192x192.png, android-chrome-512x512.png\n- android-chrome-maskable-512x512.png (PWA maskable)\n- apple-touch-icon.png (180×180)${isSvgSource ? '\n- safari-pinned-tab.svg (monochrome)' : ''}\n- site.webmanifest (PWA manifest)`;
     }
+
+    const minimalTip = isMinimal ? '\n\n💡 Tip: Run without minimal flag for full 2025 standards compliance' : '';
 
     return {
       content: [
         {
           type: 'text',
-          text: `✨ Successfully generated web icons!\n\n${frameworkInfo}\nOutput: ${outputDirRelative}/\n\nGenerated files:\n${filesList}\n- Integration guide: ${instructionsFile}\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}\n\n🤖 AI Assistant Prompt:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${aiPrompt}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+          text: `✨ Successfully generated web icons!\n\n${frameworkInfo}\nOutput: ${outputDirRelative}/\n\nGenerated files:\n${filesList}\n- Integration guide: ${instructionsFile}\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}${minimalTip}\n\n🤖 AI Assistant Prompt:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${aiPrompt}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         },
       ],
     };
@@ -314,20 +392,28 @@ async function handleAutoGenerateIcons(args: unknown) {
     }
 
     // Generate icons
+    const isMinimal = parsed.minimal || false;
     const generator = new IconGenerator({
       sourcePath: appIconPath,
       outputDir,
       projectRoot: projectPath,
       color: parsed.color,
       mode: mode as 'traditional' | 'nextjs' | 'auto',
+      minimal: isMinimal,
+      appName: parsed.appName,
+      appShortName: parsed.appShortName,
+      themeColor: parsed.themeColor,
+      backgroundColor: parsed.backgroundColor,
     });
 
     await generator.generate();
     const actualMode = generator.getMode();
+    const isSvgSource = appIconPath.toLowerCase().endsWith('.svg');
 
+    const modeLabel = isMinimal ? ' (Minimal)' : ' (Full 2025 Standards)';
     const frameworkInfo = framework
-      ? `Detected ${framework.name} → using ${actualMode === 'nextjs' ? 'app' : framework.publicDir}/ directory (${actualMode} mode)`
-      : `No framework detected → using public/ directory (${actualMode} mode)`;
+      ? `Detected ${framework.name} → using ${actualMode === 'nextjs' ? 'app' : framework.publicDir}/ directory (${actualMode} mode)${modeLabel}`
+      : `No framework detected → using public/ directory (${actualMode} mode)${modeLabel}`;
 
     const outputDirRelative = path.relative(projectPath, outputDir);
     const instructionsFile = path.relative(projectPath, generator.getInstructionsFilePath());
@@ -338,17 +424,22 @@ async function handleAutoGenerateIcons(args: unknown) {
 
     if (actualMode === 'nextjs') {
       htmlSnippet = `Next.js App Router Mode - Icons are automatically linked!\n\nNo manual <link> tags needed!`;
-      filesList = '- favicon.ico, icon.png, apple-icon.png, apple-touch-icon.png';
+      filesList = `- favicon.ico (32×32)\n- icon.png (512×512)\n- apple-icon.png, apple-touch-icon.png (180×180)${isSvgSource ? '\n- icon.svg (scalable)' : ''}`;
+    } else if (isMinimal) {
+      htmlSnippet = `<!-- Favicons (Minimal) -->\n${isSvgSource ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n' : ''}<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">\n<link rel="icon" href="/favicon.ico" sizes="48x48">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n<meta name="theme-color" content="${parsed.themeColor || '#ffffff'}">`;
+      filesList = `- favicon.ico (multi-res), favicon-48x48.png${isSvgSource ? ', favicon.svg' : ''}\n- android-chrome icons (192, 512)\n- apple-touch-icon.png (180×180)\n- site.webmanifest (PWA manifest)`;
     } else {
-      htmlSnippet = `<!-- Favicon (modern + fallback) -->\n<link rel="icon" href="/icon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon.ico" sizes="any">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n\n<!-- Safari Pinned Tab -->\n<link rel="mask-icon" href="/safari-pinned-tab.svg" color="${parsed.color || '#5bbad5'}">`;
-      filesList = '- 8 icon files (favicon, PWA icons, Apple touch icon, maskable icon)\n- site.webmanifest (PWA manifest)';
+      htmlSnippet = `<!-- Favicons -->\n${isSvgSource ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n' : ''}<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">\n<link rel="icon" href="/favicon.ico" sizes="48x48">\n\n<!-- Apple Touch Icon -->\n<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">\n\n<!-- Web App Manifest (PWA) -->\n<link rel="manifest" href="/site.webmanifest">\n<meta name="theme-color" content="${parsed.themeColor || '#ffffff'}">`;
+      filesList = `- favicon.ico (multi-res), favicon PNGs (16, 32, 48, 96)${isSvgSource ? ', favicon.svg' : ''}\n- android-chrome icons (192, 512, maskable)\n- apple-touch-icon.png (180×180)${isSvgSource ? ', safari-pinned-tab.svg' : ''}\n- site.webmanifest (PWA manifest)`;
     }
+
+    const minimalTip = isMinimal ? '\n\n💡 Tip: Run without minimal flag for full 2025 standards compliance' : '';
 
     return {
       content: [
         {
           type: 'text',
-          text: `✨ Successfully generated web icons!\n\nFound: ${path.basename(appIconPath)}\n${frameworkInfo}\nOutput: ${outputDirRelative}/\n\nGenerated files:\n${filesList}\n- Integration guide: ${instructionsFile}\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}\n\n🤖 AI Assistant Prompt:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${aiPrompt}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+          text: `✨ Successfully generated web icons!\n\nFound: ${path.basename(appIconPath)}\n${frameworkInfo}\nOutput: ${outputDirRelative}/\n\nGenerated files:\n${filesList}\n- Integration guide: ${instructionsFile}\n\n📝 ${actualMode === 'nextjs' ? 'Next.js Integration:' : 'Add these tags to your HTML <head>:'}\n\n${htmlSnippet}${minimalTip}\n\n🤖 AI Assistant Prompt:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${aiPrompt}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         },
       ],
     };
@@ -361,15 +452,23 @@ async function handleCheckIconsStatus(args: unknown) {
     // Detect framework to know where to look
     const detector = new FrameworkDetector(projectPath);
     const framework = await detector.detect();
+    const hasAppRouter = await detector.hasAppRouter();
     const publicDir = await detector.getPublicDir();
+    const appDir = await detector.getAppDir();
+
+    // Determine mode and check directory
+    const isNextjsMode = hasAppRouter && framework?.name === 'Next.js';
+    const checkDir = isNextjsMode && appDir ? appDir : publicDir;
+    const requiredIcons = isNextjsMode ? REQUIRED_ICONS_NEXTJS : REQUIRED_ICONS_TRADITIONAL;
+    const modeName = isNextjsMode ? 'Next.js App Router' : 'Traditional';
 
     // Check for app-icon source
     const appIcon = await findAppIcon(projectPath);
 
     // Check which required icons exist
     const iconStatus = await Promise.all(
-      REQUIRED_ICONS.map(async (icon) => {
-        const iconPath = path.join(publicDir, icon);
+      requiredIcons.map(async (icon: string) => {
+        const iconPath = path.join(checkDir, icon);
         try {
           await fs.access(iconPath);
           return { name: icon, exists: true, path: iconPath };
@@ -379,15 +478,16 @@ async function handleCheckIconsStatus(args: unknown) {
       })
     );
 
-    const existing = iconStatus.filter(i => i.exists);
-    const missing = iconStatus.filter(i => !i.exists);
+    const existing = iconStatus.filter((i: { exists: boolean }) => i.exists);
+    const missing = iconStatus.filter((i: { exists: boolean }) => !i.exists);
 
     let statusText = `📊 Icon Status for ${projectPath}\n\n`;
 
     if (framework) {
       statusText += `Framework: ${framework.name}\n`;
     }
-    statusText += `Icon directory: ${path.relative(projectPath, publicDir)}/\n\n`;
+    statusText += `Mode: ${modeName}\n`;
+    statusText += `Icon directory: ${path.relative(projectPath, checkDir)}/\n\n`;
 
     if (appIcon) {
       statusText += `✓ Source icon found: ${path.basename(appIcon)}\n\n`;
@@ -396,16 +496,16 @@ async function handleCheckIconsStatus(args: unknown) {
     }
 
     if (existing.length > 0) {
-      statusText += `✅ Existing icons (${existing.length}/${REQUIRED_ICONS.length}):\n`;
-      existing.forEach(icon => {
+      statusText += `✅ Existing icons (${existing.length}/${requiredIcons.length}):\n`;
+      existing.forEach((icon: { name: string }) => {
         statusText += `  - ${icon.name}\n`;
       });
       statusText += '\n';
     }
 
     if (missing.length > 0) {
-      statusText += `❌ Missing icons (${missing.length}/${REQUIRED_ICONS.length}):\n`;
-      missing.forEach(icon => {
+      statusText += `❌ Missing icons (${missing.length}/${requiredIcons.length}):\n`;
+      missing.forEach((icon: { name: string }) => {
         statusText += `  - ${icon.name}\n`;
       });
       statusText += '\n';
@@ -453,16 +553,20 @@ async function handleIntegrateIconsHTML(args: unknown) {
     // Read current HTML content
     const htmlContent = await fs.readFile(htmlFile, 'utf-8');
 
-    // Generate icon tags
-    const iconTags = `<!-- Favicon (modern + fallback) -->
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="icon" href="/favicon.ico" sizes="any">
+    // Generate icon tags (2025 standards)
+    const iconTags = `<!-- Favicons (2025 standards) -->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
 
 <!-- Apple Touch Icon -->
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
 <!-- Web App Manifest (PWA) -->
 <link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#ffffff">
 
 <!-- Safari Pinned Tab -->
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="${color}">`;

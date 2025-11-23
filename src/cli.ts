@@ -37,6 +37,7 @@ async function main() {
     .option('-o, --output <dir>', 'Output directory (auto-detected if not specified)')
     .option('-c, --color <color>', 'Color for Safari pinned tab icon (default: #5bbad5)', '#5bbad5')
     .option('-m, --mode <mode>', 'Generation mode: traditional (public/), nextjs (app/), or auto-detect', 'auto')
+    .option('--minimal', 'Generate minimal essential icon set only (default: full 2025 standards set)')
     .option('--mcp', 'Run as MCP server (for Claude Desktop integration)')
     .action(async (source: string | undefined, options) => {
       // If --mcp flag is provided, start MCP server instead
@@ -184,6 +185,7 @@ async function main() {
           projectRoot: cwd,
           color: options.color,
           mode: mode,
+          minimal: options.minimal || false,
         });
 
         await generator.generate();
@@ -192,16 +194,20 @@ async function main() {
         const actualMode = generator.getMode();
         const outputDirRelative = path.relative(cwd, outputDir) || '.';
         const instructionsFile = path.relative(cwd, generator.getInstructionsFilePath());
+        const isMinimal = options.minimal || false;
 
         // Summary - different for each mode
-        console.log(chalk.bold.green('\n✨ Success! Generated files:\n'));
+        const modeLabel = isMinimal ? ' (Minimal)' : ' (Full 2025 Standards)';
+        console.log(chalk.bold.green(`\n✨ Success! Generated files${modeLabel}:\n`));
+
+        const isSvgSource = sourcePath.toLowerCase().endsWith('.svg');
 
         if (actualMode === 'nextjs') {
           console.log(chalk.gray('  ├── favicon.ico (32×32)'));
           console.log(chalk.gray('  ├── icon.png (512×512) - auto-linked by Next.js'));
           console.log(chalk.gray('  ├── apple-icon.png (180×180) - auto-linked by Next.js'));
           console.log(chalk.gray('  ├── apple-touch-icon.png (180×180) - for compatibility'));
-          if (sourcePath.toLowerCase().endsWith('.svg')) {
+          if (isSvgSource) {
             console.log(chalk.gray('  ├── icon.svg (scalable) - auto-linked by Next.js'));
           }
           console.log(chalk.gray(`  └── In ${chalk.bold(outputDirRelative)}/\n`));
@@ -211,15 +217,23 @@ async function main() {
           console.log(chalk.white('✓ No manual <head> tags needed!'));
           console.log(chalk.white(`✓ Integration guide: ${chalk.bold(instructionsFile)}\n`));
         } else {
-          console.log(chalk.gray('  ├── favicon.ico (32×32)'));
-          if (sourcePath.toLowerCase().endsWith('.svg')) {
-            console.log(chalk.gray('  ├── icon.svg (scalable)'));
+          console.log(chalk.gray('  ├── favicon.ico (multi-res: 16×16, 32×32, 48×48)'));
+          if (!isMinimal) {
+            console.log(chalk.gray('  ├── favicon-16x16.png, favicon-32x32.png'));
           }
-          console.log(chalk.gray('  ├── icon-192.png (192×192)'));
-          console.log(chalk.gray('  ├── icon-512.png (512×512)'));
+          console.log(chalk.gray('  ├── favicon-48x48.png'));
+          if (!isMinimal) {
+            console.log(chalk.gray('  ├── favicon-96x96.png (Google search results)'));
+          }
+          if (isSvgSource) {
+            console.log(chalk.gray('  ├── favicon.svg (scalable)'));
+          }
+          console.log(chalk.gray('  ├── android-chrome-192x192.png, android-chrome-512x512.png'));
+          if (!isMinimal) {
+            console.log(chalk.gray('  ├── android-chrome-maskable-512x512.png (PWA maskable)'));
+          }
           console.log(chalk.gray('  ├── apple-touch-icon.png (180×180)'));
-          console.log(chalk.gray('  ├── icon-maskable.png (512×512, with padding)'));
-          if (sourcePath.toLowerCase().endsWith('.svg')) {
+          if (isSvgSource && !isMinimal) {
             console.log(chalk.gray('  ├── safari-pinned-tab.svg (monochrome)'));
           }
           console.log(chalk.gray('  ├── site.webmanifest'));
@@ -229,6 +243,9 @@ async function main() {
           console.log(chalk.white(`1. Review integration guide: ${chalk.bold(instructionsFile)}`));
           console.log(chalk.white(`2. Copy HTML snippet to your <head> tag`));
           console.log(chalk.white('3. Deploy and test on different devices!\n'));
+          if (isMinimal) {
+            console.log(chalk.dim('💡 Tip: Run without --minimal for full 2025 standards compliance\n'));
+          }
         }
 
         // AI-ready prompt

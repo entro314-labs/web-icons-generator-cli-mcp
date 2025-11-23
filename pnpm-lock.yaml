@@ -23,6 +23,9 @@ importers:
       ora:
         specifier: ^9.0.0
         version: 9.0.0
+      png-to-ico:
+        specifier: ^3.0.1
+        version: 3.0.1
       prompts:
         specifier: ^2.4.2
         version: 2.4.2
@@ -595,6 +598,9 @@ packages:
     resolution: {integrity: sha512-VP79XUPxV2CigYP3jWwAUFSku2aKqBH7uTAapFWCBqutsbmDo96KY5o8uh6U+/YSIn5OxJnXp73beVkpqMIGhA==}
     engines: {node: '>=18'}
 
+  minimist@1.2.8:
+    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
@@ -651,6 +657,15 @@ packages:
   pkce-challenge@5.0.0:
     resolution: {integrity: sha512-ueGLflrrnvwB3xuo/uGob5pd5FN7l0MsLf0Z87o/UQmRtwjvfylfc9MurIxRAWywCYTgrvpXBcqjV4OfCYGCIQ==}
     engines: {node: '>=16.20.0'}
+
+  png-to-ico@3.0.1:
+    resolution: {integrity: sha512-S8BOAoaGd9gT5uaemQ62arIY3Jzco7Uc7LwUTqRyqJDTsKqOAiyfyN4dSdT0D+Zf8XvgztgpRbM5wnQd7EgYwg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  pngjs@7.0.0:
+    resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
+    engines: {node: '>=14.19.0'}
 
   pretty-bytes@5.6.0:
     resolution: {integrity: sha512-FFw039TmrBqFK8ma/7OL3sDz/VytdtJr044/QUJtH0wK9lb9jLq9tJyIxUwtQJHwar2BqtiA4iCWSwo9JLkzFg==}
@@ -1403,6 +1418,8 @@ snapshots:
 
   mimic-function@5.0.1: {}
 
+  minimist@1.2.8: {}
+
   ms@2.1.3: {}
 
   mute-stream@1.0.0: {}
@@ -1448,6 +1465,14 @@ snapshots:
   path-to-regexp@8.3.0: {}
 
   pkce-challenge@5.0.0: {}
+
+  png-to-ico@3.0.1:
+    dependencies:
+      '@types/node': 22.19.1
+      minimist: 1.2.8
+      pngjs: 7.0.0
+
+  pngjs@7.0.0: {}
 
   pretty-bytes@5.6.0: {}
 
