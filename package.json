@@ -51,7 +51,7 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.22.0",
+    "@modelcontextprotocol/sdk": "^1.24.3",
     "ajv": "^8.17.1",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
@@ -59,16 +59,16 @@
     "png-to-ico": "^3.0.1",
     "prompts": "^2.4.2",
     "sharp": "^0.34.5",
-    "zod": "^4.1.12"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@anthropic-ai/mcpb": "^2.0.1",
-    "@types/node": "^24.10.1",
+    "@anthropic-ai/mcpb": "^2.1.2",
+    "@types/node": "^25.0.0",
     "@types/prompts": "^2.4.9",
     "typescript": "^5.9.3"
   },
   "type": "module",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.19.0"
   }
 }

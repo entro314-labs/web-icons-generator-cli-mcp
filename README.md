@@ -17,7 +17,7 @@ Generate all required web app icons and files from a single source image. Modern
 ✅ **HTML snippet** ready to copy/paste
 ✅ **MCP Server** for Claude Desktop integration
 ✅ **Claude Desktop Extension** with quick actions
-✅ **Zero config** – works out of the box
+✅ **Zero config** - works out of the box
 
 ## Installation
 
@@ -222,15 +222,15 @@ that all icon files are correctly placed and properly integrated.
 
 ## Requirements
 
-- **Node.js** 18 or higher
+- **Node.js** 24.19.0 or higher
 - **Source image** in SVG, PNG, or JPG format
 - For best results, use **square SVG** with transparent background
 
 ## Supported Input Formats
 
-- `.svg` – Recommended (scalable, generates all files)
-- `.png` – Good (generates raster icons, SVG files need manual creation)
-- `.jpg`/`.jpeg` – Acceptable (generates raster icons, SVG files need manual creation)
+- `.svg` - Recommended (scalable, generates all files)
+- `.png` - Good (generates raster icons, SVG files need manual creation)
+- `.jpg`/`.jpeg` - Acceptable (generates raster icons, SVG files need manual creation)
 
 ## How It Works
 
@@ -389,11 +389,11 @@ MIT
 ## Credits
 
 Built with:
-- [sharp](https://sharp.pixelplumbing.com/) – High-performance image processing
-- [commander](https://github.com/tj/commander.js) – CLI framework
-- [ora](https://github.com/sindresorhus/ora) – Elegant terminal spinners
-- [chalk](https://github.com/chalk/chalk) – Terminal styling
-- [prompts](https://github.com/terkelg/prompts) – Interactive prompts
+- [sharp](https://sharp.pixelplumbing.com/) - High-performance image processing
+- [commander](https://github.com/tj/commander.js) - CLI framework
+- [ora](https://github.com/sindresorhus/ora) - Elegant terminal spinners
+- [chalk](https://github.com/chalk/chalk) - Terminal styling
+- [prompts](https://github.com/terkelg/prompts) - Interactive prompts
 
 ---
 
