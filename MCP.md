@@ -226,7 +226,7 @@ create-web-icons --mcp
 
 ### Project Structure
 
-```
+```tree
 create-web-icons/
 ├── src/
 │   ├── cli.ts          # CLI entry point
