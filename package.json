@@ -65,7 +65,7 @@
     "@anthropic-ai/mcpb": "^2.1.2",
     "@types/node": "^25.0.0",
     "@types/prompts": "^2.4.9",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   },
   "type": "module",
   "engines": {
